@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Server Monitor</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #475569;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--success);
+        }
+        
+        .status-indicator.error {
+            background-color: var(--error);
+        }
+        
+        .last-update {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background-color: var(--bg-secondary);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .card-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .card-icon {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+        
+        .card-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-card {
+            background-color: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .cpu-stat {
+            color: #60a5fa;
+        }
+        
+        .memory-stat {
+            color: #a78bfa;
+        }
+        
+        .total-stat {
+            color: #34d399;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Minecraft Server Monitor</h1>
+            <div class="status">
+                <span class="status-indicator" id="connection-status-indicator"></span>
+                <span class="last-update">Last update: <span id="last-update">{{ data.last_update }}</span></span>
+            </div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Online Players</h2>
+                </div>
+                <div class="card-content" id="player-list">{{ data.player_list }}</div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Server Performance</h2>
+                </div>
+                <div class="card-content" id="tick-query">{{ data.tick_query }}</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value cpu-stat" id="cpu-usage">{{ data.system_stats.cpu_usage }}%</div>
+                        <div class="stat-label">CPU Usage</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value memory-stat" id="memory-usage">{{ data.system_stats.memory_usage }} GB</div>
+                        <div class="stat-label">Memory Used</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value total-stat" id="memory-total">{{ data.system_stats.memory_total }} GB</div>
+                        <div class="stat-label">Total Memory</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Entity list</h2>
+                </div>
+                <div class="card-content" id="player-ping">{{ data.player_ping }}</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateData() {
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    // Update basic info
+                    document.getElementById('player-list').textContent = data.player_list;
+                    document.getElementById('tick-query').textContent = data.tick_query;
+                    document.getElementById('player-ping').textContent = data.player_ping;
+                    document.getElementById('last-update').textContent = data.last_update;
+                    
+                    // Update system stats
+                    document.getElementById('cpu-usage').textContent = data.system_stats.cpu_usage + '%';
+                    document.getElementById('memory-usage').textContent = data.system_stats.memory_usage + ' GB';
+                    document.getElementById('memory-total').textContent = data.system_stats.memory_total + ' GB';
+                    
+                    // Update connection status
+                    const statusIndicator = document.getElementById('connection-status-indicator');
+                    if (data.player_list.includes('Error:') || 
+                        data.tick_query.includes('Error:')) {
+                        statusIndicator.classList.add('error');
+                        statusIndicator.classList.remove('success');
+                    } else {
+                        statusIndicator.classList.add('success');
+                        statusIndicator.classList.remove('error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById('connection-status-indicator').classList.add('error');
+                });
+        }
+
+        // Update data every 5 seconds (matches Python interval)
+        setInterval(updateData, 5000);
+        
+        // Initial data load
+        updateData();
+    </script>
+</body>
+</html>
