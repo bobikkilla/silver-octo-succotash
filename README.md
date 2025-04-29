@@ -4,4 +4,4 @@ Very simple, minecraft monitoring service.
 
 to run: python3 RCON_service.py
 
-prerequirements: flask, psutil. Opened RCON port in server.properties
+prerequirements: flask, psutil, mcrcon. Opened RCON port in server.properties
